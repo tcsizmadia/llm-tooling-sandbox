@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: Boiler Control API
+  description: API for controlling and monitoring a heating boiler system
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+paths:
+  /thermostat/actual:
+    get:
+      summary: Get current temperature
+      description: Returns the actual temperature reading from the thermostat
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActualTemperature'
+
+  /thermostat/desired:
+    get:
+      summary: Get desired temperature
+      description: Returns the currently set desired temperature
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesiredTemperature'
+    post:
+      summary: Set desired temperature
+      description: Sets a new desired temperature value
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DesiredTemperature'
+      responses:
+        '200':
+          description: Temperature set successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Desired temperature set successfully"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Missing desired_temperature"
+
+  /boiler/state:
+    get:
+      summary: Get boiler heating state
+      description: Returns whether the boiler is currently heating or not
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoilerState'
+
+  /boiler/error:
+    get:
+      summary: Get boiler error state
+      description: Returns the current error code and message if any
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorState'
+
+components:
+  schemas:
+    ActualTemperature:
+      type: object
+      properties:
+        actual_temperature:
+          type: number
+          format: float
+          example: 21.5
+
+    DesiredTemperature:
+      type: object
+      properties:
+        desired_temperature:
+          type: number
+          format: float
+          example: 22.0
+
+    BoilerState:
+      type: object
+      properties:
+        state:
+          type: string
+          enum: [heating, "not heating"]
+          example: "not heating"
+
+    ErrorState:
+      type: object
+      properties:
+        error_code:
+          type: integer
+          example: 0
+        error_message:
+          type: string
+          example: "No error"

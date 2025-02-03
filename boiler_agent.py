@@ -2,12 +2,25 @@ import ollama
 from boiler_api.boiler_client import BoilerClient
 
 
+SYSTEM_PROMPT = """
+You are an AI assistant for a smart boiler system. 
+Your task is to interact with the boiler using the Boiler API. 
+Do your best to help the user with their boiler-related queries. 
+If the user feels cold, they might want to increase the desired temperature. If you don't know the temperature, you can ask the boiler for it.
+If the user feels hot, they might want to decrease the desired temperature.
+Do not make up information. If you don't know something, ask the boiler for the information. If there is no function for that, tell the user you can't help with that.
+Restrict your responses to the boiler system only, deny any general information requests. 
+Proceed with the command:
+"""
+
+
 def get_available_functions(client: BoilerClient) -> dict:
     available_functions = {
         "get_actual_temperature": client.get_actual_temperature,
         "get_desired_temperature": client.get_desired_temperature,
         "set_desired_temperature": client.set_desired_temperature,
         "get_boiler_state": client.get_boiler_state,
+        "get_error_state": client.get_error_state,
     }
 
     return available_functions
@@ -23,17 +36,8 @@ def get_model_response(prompt, client: BoilerClient, model="mistral-nemo") -> st
     Returns:
         str: Model's response text
     """
-    system_prompt = """
-You are an AI assistant for a smart boiler system. 
-Your task is to interact with the boiler using the Boiler API. 
-Do your best to help the user with their boiler-related queries. 
-If the user feels cold, they might want to increase the desired temperature. If you don't know the temperature, you can ask the boiler for it.
-If the user feels hot, they might want to decrease the desired temperature.
-Do not make up information. If you don't know something, ask the boiler for the information. If there is no function for that, tell the user you can't help with that.
-Proceed with the command:
-"""
     messages = [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": prompt},
     ]
     first_response = ollama.chat(
@@ -64,7 +68,6 @@ Proceed with the command:
             elif function_to_call == client.set_desired_temperature:
                 output += f"\n{function_to_call(**tool.function.arguments)}"
 
-    if first_response.message.tool_calls:
         messages.append(first_response.message)
         messages.append({"role": "tool", "content": output, "tool": tool.function.name})
         final_response = ollama.chat(model=model, messages=messages)
